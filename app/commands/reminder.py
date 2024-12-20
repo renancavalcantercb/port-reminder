@@ -1,11 +1,21 @@
 import re
 from datetime import datetime, timedelta
-from discord.ext import commands
 from db import add_timer
+from utils import log_event
 import discord
 
 
 async def reminder(ctx, bot):
+    user_name = ctx.author.name
+    user_id = ctx.author.id
+
+    log_event(
+        "info",
+        "Command `reminder` called.",
+        user_name=user_name,
+        user_id=user_id,
+    )
+
     ship_options = [
         discord.SelectOption(label="Ship 1", value="Ship 1"),
         discord.SelectOption(label="Ship 2", value="Ship 2"),
