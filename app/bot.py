@@ -51,7 +51,7 @@ async def register_star_command(ctx, member: discord.Member = None):
 
 @tasks.loop(minutes=5)
 async def notify_stars(bot):
-    channel_id = getenv("STAR_CHANNEL_ID")
+    channel_id = int(getenv("STAR_CHANNEL_ID"))
     channel = bot.get_channel(channel_id)
     if not channel:
         print("Channel not found")
