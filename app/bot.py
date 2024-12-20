@@ -3,6 +3,8 @@ from discord.ext import commands, tasks
 from tasks import check_expired_timers
 from db import init_db
 from commands.reminder import reminder
+from commands.active import list_active_timers
+from commands.star import list_stars
 from dotenv import load_dotenv
 from os import getenv
 
@@ -15,6 +17,16 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.command(name="reminder")
 async def reminder_command(ctx):
     await reminder(ctx, bot)
+
+
+@bot.command(name="active")
+async def list_active_timers_command(ctx):
+    await list_active_timers(ctx)
+
+
+@bot.command(name="stars")
+async def list_stars_command(ctx):
+    await list_stars(ctx)
 
 
 @bot.event
