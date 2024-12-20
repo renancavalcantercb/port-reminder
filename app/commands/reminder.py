@@ -1,8 +1,8 @@
 import re
 from datetime import datetime, timedelta
 from discord.ext import commands
-import discord
 from db import add_timer
+import discord
 
 
 async def reminder(ctx, bot):
