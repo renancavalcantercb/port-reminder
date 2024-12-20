@@ -1,4 +1,5 @@
 import pandas as pd
+import logging
 from datetime import datetime, timedelta
 
 CSV_URL = "https://docs.google.com/spreadsheets/d/1ctBuqO42ZYYheuEIsbJO1NFPAJsoMrJv9oWxyhsBH9g/export?format=csv&gid=1852026355"
@@ -41,3 +42,26 @@ async def get_star_data():
         return df, None
     except Exception as e:
         return None, f"An error occurred while processing the data: {e}"
+
+
+logging.basicConfig(
+    filename="discord_bot.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+
+
+def log_event(level: str, message: str, **kwargs):
+    if kwargs:
+        extra_info = " | ".join(f"{key}: {value}" for key, value in kwargs.items())
+        message = f"{message} | {extra_info}"
+
+    log_level_dict = {
+        "info": logging.info,
+        "warning": logging.warning,
+        "error": logging.error,
+        "debug": logging.debug,
+    }
+
+    log_func = log_level_dict.get(level.lower(), logging.info)
+    log_func(message)
