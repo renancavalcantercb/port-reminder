@@ -32,6 +32,19 @@ async def add_timer(user_id, channel_id, ship_name, timer_end):
         await db.commit()
 
 
+async def get_active_timers(user_id):
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        rows = await db.execute_fetchall(
+            """
+            SELECT ship_name, timer_end
+            FROM timers
+            WHERE user_id = ? AND timer_end > datetime('now')
+        """,
+            (user_id,),
+        )
+        return rows
+
+
 async def get_expired_timers(current_time):
     async with aiosqlite.connect(DATABASE_PATH) as db:
         rows = await db.execute_fetchall(
