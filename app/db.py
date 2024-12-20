@@ -1,22 +1,15 @@
 import aiosqlite
+import os
 
 DATABASE_PATH = "timers.db"
 
 
 async def init_db():
+    schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
     async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute(
-            """
-            CREATE TABLE IF NOT EXISTS timers (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT NOT NULL,
-                channel_id TEXT NOT NULL,
-                ship_name TEXT NOT NULL,
-                timer_end TIMESTAMP NOT NULL,
-                notified BOOLEAN DEFAULT FALSE
-            )
-        """
-        )
+        with open(schema_path, "r") as schema_file:
+            schema = schema_file.read()
+        await db.executescript(schema)
         await db.commit()
 
 
@@ -62,3 +55,36 @@ async def mark_timer_notified(timer_id):
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("UPDATE timers SET notified = TRUE WHERE id = ?", (timer_id,))
         await db.commit()
+
+
+async def register_user(user_id, username):
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        existing = await db.execute_fetchall(
+            """
+            SELECT id FROM star_notifications WHERE user_id = ?
+            """,
+            (user_id,),
+        )
+        if existing:
+            return f"{username} is already registered for star notifications!"
+
+        await db.execute(
+            """
+            INSERT INTO star_notifications (user_id, username)
+            VALUES (?, ?)
+            """,
+            (user_id, username),
+        )
+        await db.commit()
+        return f"{username} has been registered for star notifications!"
+
+
+async def get_registered_users():
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        rows = await db.execute_fetchall(
+            """
+            SELECT user_id, username
+            FROM star_notifications
+            """
+        )
+        return rows
