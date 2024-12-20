@@ -1,18 +1,15 @@
 from discord import Embed
 from utils import get_star_data
-from utils import log_event()
+from utils import log_event
+
 
 async def list_stars(ctx):
     user_id = ctx.message.author.id
     user_name = ctx.message.author.name
- 
-    log_event(
-        "info", 
-        "Command `list_stars` called.", 
-        user_name=user_name, 
-        user_id=user_id
-    )
 
+    log_event(
+        "info", "Command `list_stars` called.", user_name=user_name, user_id=user_id
+    )
 
     df, error = await get_star_data()
     if error:
