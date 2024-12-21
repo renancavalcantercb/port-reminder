@@ -49,7 +49,7 @@ async def get_star_data():
 logging.basicConfig(
     filename="discord_bot.log",
     level=logging.INFO,
- age)s",
+    format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
 def log_event(level: str, message: str, **kwargs):
