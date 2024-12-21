@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 CSV_URL = "https://docs.google.com/spreadsheets/d/1ctBuqO42ZYYheuEIsbJO1NFPAJsoMrJv9oWxyhsBH9g/export?format=csv&gid=1852026355"
 
+
 async def get_star_data():
     try:
         df = pd.read_csv(CSV_URL)
@@ -40,17 +41,21 @@ async def get_star_data():
 
         df_filtered = filter_by_size(df, sizes=[10, 9])
 
-        df_filtered = df_filtered.sort_values(by=["Size_num", "Time_remaining"], ascending=[False, True])
+        df_filtered = df_filtered.sort_values(
+            by=["Size_num", "Time_remaining"], ascending=[False, True]
+        )
 
         return df_filtered, None
     except Exception as e:
         return None, f"An error occurred while processing the data: {e}"
+
 
 logging.basicConfig(
     filename="discord_bot.log",
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
+
 
 def log_event(level: str, message: str, **kwargs):
     if kwargs:
@@ -66,4 +71,3 @@ def log_event(level: str, message: str, **kwargs):
 
     log_func = log_level_dict.get(level.lower(), logging.info)
     log_func(message)
-   format="%(asctime)s - %(levelname)s - %(mess
