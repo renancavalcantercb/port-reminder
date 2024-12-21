@@ -51,9 +51,12 @@ async def get_star_data():
 
 
 logging.basicConfig(
-    filename="discord_bot.log",
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("discord_bot.log"),
+        logging.StreamHandler(),
+    ],
 )
 
 
