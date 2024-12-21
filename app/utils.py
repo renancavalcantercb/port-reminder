@@ -1,6 +1,7 @@
 import pandas as pd
 import logging
 from datetime import datetime, timedelta
+from os import makedirs, path
 
 CSV_URL = "https://docs.google.com/spreadsheets/d/1ctBuqO42ZYYheuEIsbJO1NFPAJsoMrJv9oWxyhsBH9g/export?format=csv&gid=1852026355"
 
@@ -50,11 +51,15 @@ async def get_star_data():
         return None, f"An error occurred while processing the data: {e}"
 
 
+log_dir = "/app/logs"
+makedirs(log_dir, exist_ok=True)
+log_file = path.join(log_dir, "discord_bot.log")
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler("discord_bot.log"),
+        logging.FileHandler(log_file),
         logging.StreamHandler(),
     ],
 )
