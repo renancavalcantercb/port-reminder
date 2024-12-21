@@ -66,17 +66,20 @@ async def notify_stars(bot):
         return
 
     registered_users = await get_registered_users()
+    if not registered_users:
+        return
+
+    mentions = [f"<@{user_id}>" for user_id, _ in registered_users]
+
     for _, row in upcoming_stars.iterrows():
-        for user_id, _ in registered_users:
-            user = await bot.fetch_user(int(user_id))
-            try:
-                await channel.send(
-                    f"{user.mention}, a star is coming soon!\n"
-                    f"**Size:** {row['Size']} | **World:** {row['World']} | **Region:** {row['Region']} | "
-                    f"**Time Remaining:** {row['Time_remaining']} minutes."
-                )
-            except Exception as e:
-                print(f"Failed to notify user {user_id}: {e}")
+        try:
+            await channel.send(
+                f"{', '.join(mentions)}, a star is coming soon!\n"
+                f"**Size:** {row['Size']} | **World:** {row['World']} | **Region:** {row['Region']} | "
+                f"**Time Remaining:** {row['Time_remaining']} minutes."
+            )
+        except Exception as e:
+            print(f"Failed to notify: {e}")
 
 
 if __name__ == "__main__":
