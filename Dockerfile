@@ -10,4 +10,4 @@ COPY . .
 
 ENV PYTHONPATH=/app
 
-CMD ["python", "bot.py"]
+CMD ["python", "app/bot.py"]
