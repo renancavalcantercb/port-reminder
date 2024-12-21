@@ -58,28 +58,42 @@ async def notify_stars(bot):
         return
 
     df, error = await get_star_data()
-    if error or df.empty:
+    if error:
+        print(f"Error fetching star data: {error}")
+        return
+
+    if df.empty:
+        print("No stars available for notification.")
         return
 
     upcoming_stars = df[df["Time_remaining"] <= 10]
     if upcoming_stars.empty:
+        print("No upcoming stars within 10 minutes.")
         return
 
     registered_users = await get_registered_users()
     if not registered_users:
+        print("No registered users to notify.")
         return
 
     mentions = [f"<@{user_id}>" for user_id, _ in registered_users]
 
+    notified_stars = set()
+
     for _, row in upcoming_stars.iterrows():
+        star_key = (row["World"], row["Region"], row["Time_remaining"])
+        if star_key in notified_stars:
+            continue
+
         try:
             await channel.send(
                 f"{', '.join(mentions)}, a star is coming soon!\n"
                 f"**Size:** {row['Size']} | **World:** {row['World']} | **Region:** {row['Region']} | "
                 f"**Time Remaining:** {row['Time_remaining']} minutes."
             )
+            notified_stars.add(star_key)
         except Exception as e:
-            print(f"Failed to notify: {e}")
+            print(f"Failed to notify for star {star_key}: {e}")
 
 
 if __name__ == "__main__":

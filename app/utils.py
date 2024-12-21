@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 CSV_URL = "https://docs.google.com/spreadsheets/d/1ctBuqO42ZYYheuEIsbJO1NFPAJsoMrJv9oWxyhsBH9g/export?format=csv&gid=1852026355"
 
-
 async def get_star_data():
     try:
         df = pd.read_csv(CSV_URL)
@@ -16,40 +15,42 @@ async def get_star_data():
         df = df[df["Region"].notna()]
         df["Time"] = pd.to_datetime(df["Time"], format="%H:%M", errors="coerce").dt.time
         df = df[df["Time"].notna()]
-
-        utc_now = datetime.utcnow()
-
-        df = df[df["Time"].apply(lambda x: x > utc_now.time())]
-
         df["Size_num"] = pd.to_numeric(
             df["Size"].str.extract(r"S(\d+)", expand=False), errors="coerce"
         )
-        df = df[df["Size_num"].isin([10, 9])]
 
-        df = df.sort_values(by="Size_num", ascending=False)
+        utc_now = datetime.utcnow()
+        df = df[df["Time"].apply(lambda x: x > utc_now.time())]
 
         def calculate_time_remaining(event_time):
             event_datetime = datetime.combine(utc_now.date(), event_time)
             if event_datetime < utc_now:
                 event_datetime += timedelta(days=1)
             delta = event_datetime - utc_now
-            hours, remainder = divmod(int(delta.total_seconds()), 3600)
-            minutes, _ = divmod(remainder, 60)
-            return hours * 60 + minutes
+            return delta.total_seconds() // 60
 
         df["Time_remaining"] = df["Time"].apply(calculate_time_remaining)
 
-        return df, None
+        def filter_by_size(df, sizes):
+            for size in sizes:
+                filtered = df[df["Size_num"] == size]
+                if not filtered.empty:
+                    return filtered
+            return pd.DataFrame(columns=df.columns)
+
+        df_filtered = filter_by_size(df, sizes=[10, 9])
+
+        df_filtered = df_filtered.sort_values(by=["Size_num", "Time_remaining"], ascending=[False, True])
+
+        return df_filtered, None
     except Exception as e:
         return None, f"An error occurred while processing the data: {e}"
-
 
 logging.basicConfig(
     filename="discord_bot.log",
     level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
+ age)s",
 )
-
 
 def log_event(level: str, message: str, **kwargs):
     if kwargs:
@@ -65,3 +66,4 @@ def log_event(level: str, message: str, **kwargs):
 
     log_func = log_level_dict.get(level.lower(), logging.info)
     log_func(message)
+   format="%(asctime)s - %(levelname)s - %(mess
