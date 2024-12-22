@@ -1,4 +1,5 @@
 import discord
+import asyncio
 from discord.ext import commands, tasks
 from tasks import check_expired_timers
 from db import init_db
@@ -6,6 +7,8 @@ from commands.reminder import reminder
 from commands.active import list_active_timers
 from commands.star import list_stars
 from commands.register_star_notification import register_star_notification
+from commands.list_star_notifications import list_star_notifications
+from commands.remove_star_notification import remove_star_notification
 from commands.notify_star import notify_stars
 from dotenv import load_dotenv
 from os import getenv
@@ -48,6 +51,13 @@ async def list_stars_command(ctx):
 async def register_star_command(ctx, member: discord.Member = None):
     await register_star_notification(ctx, member)
 
+@bot.command(name="list_notify")
+async def list_notify_command(ctx):
+    await list_star_notifications(ctx)
+
+@bot.command(name="remove_notify")
+async def remove_notify_command(ctx):
+    await remove_star_notification(ctx)
 
 @tasks.loop(minutes=5)
 async def check_stars(bot):
@@ -55,7 +65,5 @@ async def check_stars(bot):
 
 
 if __name__ == "__main__":
-    import asyncio
-
     asyncio.run(init_db())
     bot.run(getenv("DISCORD_BOT_TOKEN"))

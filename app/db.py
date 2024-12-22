@@ -88,3 +88,22 @@ async def get_registered_users():
             """
         )
         return rows
+
+async def delete_user(user_id):
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        cursor = await db.execute(
+            "SELECT user_id FROM star_notifications WHERE user_id = ?",
+            (user_id,)
+        )
+        user = await cursor.fetchone()
+        
+        if not user:
+            return f"No user found with ID {user_id}."
+        
+        await db.execute(
+            "DELETE FROM star_notifications WHERE user_id = ?",
+            (user_id,)
+        )
+        await db.commit()
+
+        return f"User with ID {user_id} has been deleted from notifications."
