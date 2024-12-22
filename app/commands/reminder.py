@@ -2,6 +2,7 @@ import re
 from datetime import datetime, timedelta
 from db import add_timer
 from utils import log_event
+from asyncio import TimeoutError
 import discord
 
 
@@ -58,7 +59,7 @@ async def reminder(ctx, bot):
                 await interaction.followup.send(
                     "Invalid time format. Please use the format `00h 00m`."
                 )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             await interaction.followup.send(
                 "You took too long to respond. Please try again."
             )

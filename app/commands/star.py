@@ -1,4 +1,4 @@
-from discord import Embed
+from utils import create_embed
 from utils import get_star_data
 from utils import log_event
 
@@ -17,22 +17,28 @@ async def list_stars(ctx):
         return
 
     if df.empty:
-        await ctx.send("No available stars of S10 or S9.")
+        embed = create_embed(
+            title="Upcoming Stars (S10 and S9)",
+            description="There are no stars currently available for S10 or S9.",
+            color=0xFF0000
+        )
+        await ctx.send(embed=embed)
         return
 
-    embed = Embed(title="Upcoming Stars (S10 and S9)", color=0x1F8B4C)
+    fields = []
     for _, row in df.iterrows():
-        embed.add_field(
-            name=f"{row['Size']} - {row['Region']}",
-            value=(
-                f"**World:** {row['World']} | "
-                f"**Time Remaining:** {row['Time_remaining']} minutes | "
-                f"**Time:** {row['Time']}"
-            ),
-            inline=False,
+        fields.append(
+            (
+                f"{row['Size']} - {row['Region']}",
+                f"**World:** {row['World']} | **Time Remaining:** {row['Time_remaining']} minutes | **Time:** {row['Time']}",
+                False
+            )
         )
 
-    footer = "Made by @CuTGuArDiAn"
-    embed.set_footer(text=footer)
+    embed = create_embed(
+        title="Upcoming Stars (S10 and S9)",
+        description="Here are the upcoming stars:",
+        fields=fields
+    )
 
     await ctx.send(embed=embed)

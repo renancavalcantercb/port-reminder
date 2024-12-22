@@ -3,7 +3,7 @@ from db import register_user
 from utils import log_event
 
 
-async def register_star(ctx, member: Member = None):
+async def register_star_notification(ctx, member: Member = None):
     target = member or ctx.author
     user_id = str(target.id)
     username = target.name
@@ -12,7 +12,7 @@ async def register_star(ctx, member: Member = None):
 
     log_event(
         "info",
-        "Command `register_star` called.",
+        "Command `register_star_notification` called.",
         author_name=author_name,
         author_id=author_id,
         target_username=username,

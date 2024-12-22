@@ -2,6 +2,7 @@ import pandas as pd
 import logging
 from datetime import datetime, timedelta
 from os import makedirs, path
+from discord import Embed
 
 CSV_URL = "https://docs.google.com/spreadsheets/d/1ctBuqO42ZYYheuEIsbJO1NFPAJsoMrJv9oWxyhsBH9g/export?format=csv&gid=1852026355"
 
@@ -79,3 +80,16 @@ def log_event(level: str, message: str, **kwargs):
 
     log_func = log_level_dict.get(level.lower(), logging.info)
     log_func(message)
+
+def create_embed(title, description, color=0x1F8B4C, fields=None):
+    embed = Embed(title=title, description=description, color=color)
+
+    if fields:
+        for field in fields:
+            embed.add_field(name=field[0], value=field[1], inline=field[2])
+
+    footer_text = "CuTBot created by CuTGuArDiAn"
+    footer_icon = "https://cdn.discordapp.com/avatars/959737656982515782/81bb0b9d0f75f06b3e94ac232b8ab8dd.png?size=1024"
+    embed.set_footer(text=footer_text, icon_url=footer_icon)
+
+    return embed
