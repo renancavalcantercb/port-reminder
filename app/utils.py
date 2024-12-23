@@ -9,6 +9,22 @@ CSV_URL = "https://docs.google.com/spreadsheets/d/1ctBuqO42ZYYheuEIsbJO1NFPAJsoM
 
 async def get_star_data():
     try:
+        location_mapping = {
+            "ana": "Anachronia",
+            "asg": "Asgarnia",
+            "ash": "Ashdale",
+            "c/k": "Crandor or Karamja",
+            "daem": "Daemonheim",
+            "f/l": "Fremennik lands or Lunar Isle",
+            "kand": "Kandarin",
+            "des": "Kharidian Desert",
+            "mena": "Menaphos",
+            "mist": "Misthalin",
+            "m/m": "Morytania or Mos Le'Harmless",
+            "gt": "Piscatoris, the Gnome Stronghold or Tirannwn",
+            "tusk": "Tuska",
+            "wildy": "Wilderness",
+        }
         df = pd.read_csv(CSV_URL)
 
         required_columns = ["World", "Region", "Time", "Size"]
@@ -47,6 +63,14 @@ async def get_star_data():
             by=["Size_num", "Time_remaining"], ascending=[False, True]
         )
 
+        def map_location(value, location_mapping):
+            mapped_value = location_mapping.get(value.lower())
+            if mapped_value:
+                return f"{mapped_value} ({value})"
+            return value
+
+        df_filtered["Region"] = df_filtered["Region"].apply(lambda x: map_location(x, location_mapping))
+
         return df_filtered, None
     except Exception as e:
         return None, f"An error occurred while processing the data: {e}"
@@ -81,6 +105,7 @@ def log_event(level: str, message: str, **kwargs):
     log_func = log_level_dict.get(level.lower(), logging.info)
     log_func(message)
 
+
 def create_embed(title, description, color=0x1F8B4C, fields=None):
     embed = Embed(title=title, description=description, color=color)
 
@@ -93,3 +118,4 @@ def create_embed(title, description, color=0x1F8B4C, fields=None):
     embed.set_footer(text=footer_text, icon_url=footer_icon)
 
     return embed
+
