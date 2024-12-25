@@ -56,8 +56,8 @@ async def list_notify_command(ctx):
     await list_star_notifications(ctx)
 
 @bot.command(name="remove_notify")
-async def remove_notify_command(ctx):
-    await remove_star_notification(ctx)
+async def remove_notify_command(ctx, member: discord.Member = None):
+    await remove_star_notification(ctx, member)
 
 @tasks.loop(minutes=5)
 async def check_stars(bot):

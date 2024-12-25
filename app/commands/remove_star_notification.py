@@ -1,8 +1,9 @@
 from db import delete_user
 from utils import create_embed
 
-async def remove_star_notification(ctx):
-    user_id = ctx.author.id
+async def remove_star_notification(ctx, member):
+    target = member or ctx.author
+    user_id = str(target.id)
     try:
         response = await delete_user(user_id)
 
