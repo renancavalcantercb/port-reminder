@@ -10,6 +10,7 @@ from commands.register_star_notification import register_star_notification
 from commands.list_star_notifications import list_star_notifications
 from commands.remove_star_notification import remove_star_notification
 from commands.notify_star import notify_stars
+from commands.curse_word import create_buttons, show_rankings
 from dotenv import load_dotenv
 from os import getenv
 from utils import log_event
@@ -24,7 +25,9 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 async def on_ready():
     log_event("info", f"Logged in as {bot.user.name}")
     check_timers.start()
-    check_stars.start(bot)
+
+
+#   check_stars.start(bot)
 
 
 @bot.command(name="reminder")
@@ -51,15 +54,28 @@ async def list_stars_command(ctx):
 async def register_star_command(ctx, member: discord.Member = None):
     await register_star_notification(ctx, member)
 
+
 @bot.command(name="list_notify")
 async def list_notify_command(ctx):
     await list_star_notifications(ctx)
+
 
 @bot.command(name="remove_notify")
 async def remove_notify_command(ctx, member: discord.Member = None):
     await remove_star_notification(ctx, member)
 
-@tasks.loop(minutes=5)
+
+@bot.command("curse_word")
+async def curse_word_command(ctx):
+    await create_buttons(ctx)
+
+
+@bot.command("ranking")
+async def curse_word_ranking(ctx):
+    await show_rankings(ctx)
+
+
+# @tasks.loop(minutes=5)
 async def check_stars(bot):
     await notify_stars(bot)
 
