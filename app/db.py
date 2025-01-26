@@ -89,21 +89,81 @@ async def get_registered_users():
         )
         return rows
 
+
 async def delete_user(user_id):
     async with aiosqlite.connect(DATABASE_PATH) as db:
         cursor = await db.execute(
-            "SELECT user_id FROM star_notifications WHERE user_id = ?",
-            (user_id,)
+            "SELECT user_id FROM star_notifications WHERE user_id = ?", (user_id,)
         )
         user = await cursor.fetchone()
-        
+
         if not user:
             return f"No user found with ID {user_id}."
-        
-        await db.execute(
-            "DELETE FROM star_notifications WHERE user_id = ?",
-            (user_id,)
-        )
+
+        await db.execute("DELETE FROM star_notifications WHERE user_id = ?", (user_id,))
         await db.commit()
 
         return f"User with ID {user_id} has been deleted from notifications."
+
+
+async def add_or_update_curse_counter(emoji, name):
+    """
+    Add a new emoji or update the curse word counter for an existing one.
+    """
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute(
+            """
+            INSERT INTO curse_word_counters (emoji, name, count)
+            VALUES (?, ?, 1)
+            ON CONFLICT(emoji) DO UPDATE SET count = count + 1
+            """,
+            (emoji, name),
+        )
+        await db.commit()
+
+async def undo_last_curse_counter():
+    """
+    Undo the last curse word counter based on the most recent created_at timestamp.
+    """
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        cursor = await db.execute(
+            """
+            SELECT emoji, name, count
+            FROM curse_word_counters
+            WHERE count > 0
+            ORDER BY created_at DESC
+            LIMIT 1
+            """
+        )
+        last_entry = await cursor.fetchone()
+
+        if last_entry:
+            emoji, name, count = last_entry
+            if count > 0:
+                await db.execute(
+                    """
+                    UPDATE curse_word_counters
+                    SET count = count - 1
+                    WHERE emoji = ?
+                    """,
+                    (emoji,),
+                )
+                await db.commit()
+                return emoji, name
+
+        return None
+
+
+async def get_curse_counters():
+    """
+    Retrieve all curse word counters from the database, sorted by count.
+    """
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        rows = await db.execute_fetchall(
+            """
+            SELECT emoji, name, count
+            FROM curse_word_counters
+            ORDER BY count DESC
+            """
+        )
+        return rows

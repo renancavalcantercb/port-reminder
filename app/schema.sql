@@ -13,3 +13,10 @@ CREATE TABLE IF NOT EXISTS star_notifications (
     username TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS curse_word_counters (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    emoji TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    count INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
