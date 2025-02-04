@@ -14,6 +14,7 @@ curse_word_emojis = {
     "🤮": "Liru",
     "🤐": "Cute",
     "🤬": "Maria Clara",
+    "🥶": "Tatá",
 }
 
 
