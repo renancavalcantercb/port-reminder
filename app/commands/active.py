@@ -20,7 +20,7 @@ async def list_active_timers(ctx):
         embed = create_embed(
             title="Active Timers",
             description="You have no active timers.",
-            color=0xFF0000
+            color=0xFF0000,
         )
         await ctx.send(embed=embed)
         return
@@ -40,13 +40,13 @@ async def list_active_timers(ctx):
         embed = create_embed(
             title="Active Timers",
             description="Here are your active timers:",
-            fields=[("Timers", timers_message, False)]
+            fields=[("Timers", timers_message, False)],
         )
         await ctx.send(embed=embed)
     else:
         embed = create_embed(
             title="Active Timers",
             description="You have no active timers.",
-            color=0xFF0000
+            color=0xFF0000,
         )
         await ctx.send(embed=embed)

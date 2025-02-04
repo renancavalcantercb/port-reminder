@@ -47,14 +47,14 @@ async def notify_stars(bot):
                 (
                     f"{row['Size']} - {row['Region']}",
                     f"**World:** {row['World']} | **Time Remaining:** {row['Time_remaining']} minutes | **Time:** {row['Time']}",
-                    False
+                    False,
                 )
             ]
 
             embed = create_embed(
                 title="Upcoming Star Notification",
                 description="A star is coming soon!",
-                fields=fields
+                fields=fields,
             )
 
             await channel.send(message, embed=embed)

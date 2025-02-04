@@ -26,11 +26,14 @@ async def get_star_data():
             "wildy": "Wilderness",
         }
         df = pd.read_csv(CSV_URL)
-
+        log_event("info", f"Dataframe columns: {df.columns}")
+        log_event("info", f"Dataframe shape: {df.shape}")
+        log_event("info", str(df["Size"].unique().tolist()))
         required_columns = ["World", "Region", "Time", "Size"]
         if not all(column in df.columns for column in required_columns):
             return None, "The sheet is updating. Please try again later."
 
+        log_event("info", str(df.head()))
         df = df[df["Region"].notna()]
         df["Time"] = pd.to_datetime(df["Time"], format="%H:%M", errors="coerce").dt.time
         df = df[df["Time"].notna()]
@@ -69,7 +72,9 @@ async def get_star_data():
                 return f"{mapped_value} ({value})"
             return value
 
-        df_filtered["Region"] = df_filtered["Region"].apply(lambda x: map_location(x, location_mapping))
+        df_filtered["Region"] = df_filtered["Region"].apply(
+            lambda x: map_location(x, location_mapping)
+        )
 
         return df_filtered, None
     except Exception as e:
@@ -118,4 +123,3 @@ def create_embed(title, description, color=0x1F8B4C, fields=None):
     embed.set_footer(text=footer_text, icon_url=footer_icon)
 
     return embed
-

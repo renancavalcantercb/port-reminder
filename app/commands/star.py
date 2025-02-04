@@ -20,7 +20,7 @@ async def list_stars(ctx):
         embed = create_embed(
             title="Upcoming Stars (S10 and S9)",
             description="There are no stars currently available for S10 or S9.",
-            color=0xFF0000
+            color=0xFF0000,
         )
         await ctx.send(embed=embed)
         return
@@ -31,14 +31,14 @@ async def list_stars(ctx):
             (
                 f"{row['Size']} - {row['Region']}",
                 f"**World:** {row['World']} | **Time Remaining:** {row['Time_remaining']} minutes | **Time:** {row['Time']}",
-                False
+                False,
             )
         )
 
     embed = create_embed(
         title="Upcoming Stars (S10 and S9)",
         description="Here are the upcoming stars:",
-        fields=fields
+        fields=fields,
     )
 
     await ctx.send(embed=embed)
