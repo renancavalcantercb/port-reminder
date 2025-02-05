@@ -26,14 +26,7 @@ jobs:
       - name: Deploy with gcloud inside Docker
         run: |
           docker run --rm -v $HOME/.config/gcloud:/root/.config/gcloud google/cloud-sdk:latest \
-          gcloud compute ssh my-docker-vm --zone us-east1-b --project estudos-444305 --command "
-            cd ~
-            if [ ! -d 'port-reminder' ]; then
-              git clone https://github.com/renancavalcantercb/port-reminder.git port-reminder
-            fi
-            cd port-reminder && \
-            git reset --hard origin/main && \
-            git pull origin main && \
-            sudo mkdir -p /var/log/port-reminder && \
-            sudo docker-compose up -d --build"
-
+          gcloud compute ssh renan-dev@my-docker-vm --zone us-east1-b --project estudos-444305 --command "
+            cd ~/port-reminder && \
+            git pull && \
+          docker-compose up -d --build"
