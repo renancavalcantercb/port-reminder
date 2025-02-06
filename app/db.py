@@ -30,7 +30,7 @@ async def add_timer(user_id, channel_id, ship_name, timer_end):
         ]
     )
     query_job = client.query(query, job_config=job_config)
-    query_job.result()
+    query_job.result()  # Espera a conclusão da query
 
 
 async def get_active_timers(user_id):
@@ -128,13 +128,13 @@ async def add_or_update_curse_counter(emoji, name):
     """
     query = f"""
         MERGE `{DATASET_ID}.{TABLE_CURSE_WORD_COUNTERS}` AS target
-        USING (SELECT @emoji AS emoji, @name AS name) AS source
-        ON target.emoji = source.emoji
+        USING (SELECT @name AS name, 1 AS count) AS source
+        ON SAFE_CAST(target.name AS STRING) = SAFE_CAST(source.name AS STRING)
         WHEN MATCHED THEN
             UPDATE SET count = target.count + 1
         WHEN NOT MATCHED THEN
             INSERT (emoji, name, count, created_at)
-            VALUES (@emoji, @name, 1, CURRENT_TIMESTAMP());
+            VALUES (@emoji, @name, source.count, CURRENT_TIMESTAMP());
     """
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
@@ -192,11 +192,12 @@ async def get_curse_counters(name=None):
     """
 
     job_config = bigquery.QueryJobConfig(
-        query_parameters=[bigquery.ScalarQueryParameter("name", "STRING", name)]
+        query_parameters=[
+            bigquery.ScalarQueryParameter("name", "STRING", name)
+        ]
     )
 
     query_job = client.query(query, job_config=job_config)
     rows = query_job.result()
 
     return [dict(row) for row in rows]
-
