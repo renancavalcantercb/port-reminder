@@ -1,8 +1,6 @@
 import discord
-import asyncio
 from discord.ext import commands, tasks
 from tasks import check_expired_timers
-from db import init_db
 from commands.reminder import reminder
 from commands.active import list_active_timers
 from commands.star import list_stars
@@ -81,5 +79,4 @@ async def check_stars(bot):
 
 
 if __name__ == "__main__":
-    asyncio.run(init_db())
     bot.run(getenv("DISCORD_BOT_TOKEN"))

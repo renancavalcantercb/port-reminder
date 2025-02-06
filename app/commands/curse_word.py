@@ -28,9 +28,12 @@ async def create_buttons(ctx):
         button = Button(label=name, emoji=emoji, style=discord.ButtonStyle.primary)
 
         async def button_callback(interaction, emoji=emoji, name=name):
+            await interaction.response.defer()
+
             await add_or_update_curse_counter(emoji, name)
-            counters = await get_curse_counters()
-            updated_count = next((row[2] for row in counters if row[0] == emoji), 0)
+            counters = await get_curse_counters(name)
+
+            updated_count = counters[0].get("count")
 
             log_event(
                 "info",
@@ -39,7 +42,7 @@ async def create_buttons(ctx):
                 user_id=interaction.user.id,
             )
 
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{name} now has {updated_count} curse words!", ephemeral=False
             )
 
@@ -82,7 +85,6 @@ async def create_buttons(ctx):
         "👀 Curse Word Tracker! Click a button to add a curse word:", view=view
     )
 
-
 async def show_rankings(ctx):
     """
     Displays the rankings of curse word counters from the database.
@@ -97,16 +99,19 @@ async def show_rankings(ctx):
     )
 
     if not counters:
-        await ctx.send("No curse word data found!")
+        await ctx.send("🚨 **No curse word data found!**")
         return
 
-    table = "📊 **Curse Word Rankings**\n"
+    table = "📊 **Curse Word Rankings** 📊\n"
     table += "```\n"
-    table += f"{'Emoji':<6} {'Name':<15} {'Count':<10}\n"
-    table += "-" * 35 + "\n"
+    table += f"{'🏆':<2} {'Emoji':<6} │ {'Name':<15} │ {'Count':<8}\n"
+    table += "—" * 36 + "\n"
 
-    for emoji, name, count in counters:
-        table += f"{emoji:<6} {name:<15} {count:<10}\n"
+    for idx, row in enumerate(sorted(counters, key=lambda x: x["count"], reverse=True), start=1):
+        emoji = row.get("emoji")
+        name = row.get("name")
+        count = row.get("count")
+        table += f"{idx:<2} {emoji:<6} │ {name:<15} │ {count:<8}\n"
 
     table += "```"
     await ctx.send(table)

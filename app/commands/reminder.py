@@ -47,9 +47,13 @@ async def reminder(ctx, bot):
                 minutes = int(time_match.group(2))
                 total_minutes = hours * 60 + minutes
                 timer_end = datetime.utcnow() + timedelta(minutes=total_minutes)
+                timer_end_str = timer_end.strftime("%Y-%m-%d %H:%M:%S")
 
                 await add_timer(
-                    interaction.user.id, interaction.channel.id, ship_name, timer_end
+                    interaction.user.id,
+                    interaction.channel.id,
+                    ship_name,
+                    timer_end_str,
                 )
 
                 await interaction.followup.send(

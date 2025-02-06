@@ -1,169 +1,202 @@
-import aiosqlite
-import os
+from google.cloud import bigquery
+from google.oauth2 import service_account
+import uuid
 
-DATABASE_PATH = "timers.db"
+from os import getenv
 
+credentials = service_account.Credentials.from_service_account_file(
+    getenv("GOOGLE_APPLICATION_CREDENTIALS")
+)
+client = bigquery.Client(credentials=credentials, project=credentials.project_id)
 
-async def init_db():
-    schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        with open(schema_path, "r") as schema_file:
-            schema = schema_file.read()
-        await db.executescript(schema)
-        await db.commit()
+DATASET_ID = "estudos-444305.discord"
+TABLE_TIMERS = "timers"
+TABLE_STAR_NOTIFICATIONS = "star_notifications"
+TABLE_CURSE_WORD_COUNTERS = "curse_word_counters"
 
 
 async def add_timer(user_id, channel_id, ship_name, timer_end):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute(
-            """
-            INSERT INTO timers (user_id, channel_id, ship_name, timer_end, notified)
-            VALUES (?, ?, ?, ?, ?)
-        """,
-            (user_id, channel_id, ship_name, timer_end, False),
-        )
-        await db.commit()
+    query = f"""
+        INSERT INTO `{DATASET_ID}.{TABLE_TIMERS}` (id, user_id, channel_id, ship_name, timer_end, notified)
+        VALUES (@id, @user_id, @channel_id, @ship_name, @timer_end, FALSE)
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("id", "STRING", str(uuid.uuid4())),
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
+            bigquery.ScalarQueryParameter("channel_id", "STRING", channel_id),
+            bigquery.ScalarQueryParameter("ship_name", "STRING", ship_name),
+            bigquery.ScalarQueryParameter("timer_end", "TIMESTAMP", timer_end),
+        ]
+    )
+    query_job = client.query(query, job_config=job_config)
+    query_job.result()
 
 
 async def get_active_timers(user_id):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        rows = await db.execute_fetchall(
-            """
-            SELECT ship_name, timer_end
-            FROM timers
-            WHERE user_id = ? AND timer_end > datetime('now')
-        """,
-            (user_id,),
-        )
-        return rows
+    query = f"""
+        SELECT ship_name, timer_end
+        FROM `{DATASET_ID}.{TABLE_TIMERS}`
+        WHERE user_id = @user_id and notified is FALSE
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
+        ]
+    )
+    query_job = client.query(query, job_config=job_config)
+    rows = query_job.result()
+    return [dict(row) for row in rows]
 
 
 async def get_expired_timers(current_time):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        rows = await db.execute_fetchall(
-            """
-            SELECT id, user_id, channel_id, ship_name
-            FROM timers
-            WHERE timer_end <= ? AND notified = FALSE
-        """,
-            (current_time,),
-        )
-        return rows
+    query = f"""
+        SELECT id, user_id, channel_id, ship_name
+        FROM `{DATASET_ID}.{TABLE_TIMERS}`
+        WHERE timer_end <= @current_time AND notified = FALSE
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("current_time", "TIMESTAMP", current_time),
+        ]
+    )
+    query_job = client.query(query, job_config=job_config)
+    rows = query_job.result()
+    return [dict(row) for row in rows]
 
 
 async def mark_timer_notified(timer_id):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute("UPDATE timers SET notified = TRUE WHERE id = ?", (timer_id,))
-        await db.commit()
+    query = f"""
+        UPDATE `{DATASET_ID}.{TABLE_TIMERS}`
+        SET notified = TRUE
+        WHERE id = @timer_id
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("timer_id", "STRING", timer_id),
+        ]
+    )
+    query_job = client.query(query, job_config=job_config)
+    query_job.result()
 
 
 async def register_user(user_id, username):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        existing = await db.execute_fetchall(
-            """
-            SELECT id FROM star_notifications WHERE user_id = ?
-            """,
-            (user_id,),
-        )
-        if existing:
-            return f"{username} is already registered for star notifications!"
-
-        await db.execute(
-            """
-            INSERT INTO star_notifications (user_id, username)
-            VALUES (?, ?)
-            """,
-            (user_id, username),
-        )
-        await db.commit()
-        return f"{username} has been registered for star notifications!"
+    query = f"""
+        INSERT INTO `{DATASET_ID}.{TABLE_STAR_NOTIFICATIONS}` (user_id, username)
+        VALUES (@user_id, @username)
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "INT64", user_id),
+            bigquery.ScalarQueryParameter("username", "STRING", username),
+        ]
+    )
+    query_job = client.query(query, job_config=job_config)
+    query_job.result()
+    return f"{username} has been registered for star notifications!"
 
 
 async def get_registered_users():
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        rows = await db.execute_fetchall(
-            """
-            SELECT user_id, username
-            FROM star_notifications
-            """
-        )
-        return rows
+    query = f"""
+        SELECT user_id, username
+        FROM `{DATASET_ID}.{TABLE_STAR_NOTIFICATIONS}`
+    """
+    query_job = client.query(query)
+    rows = query_job.result()
+    return [dict(row) for row in rows]
 
 
 async def delete_user(user_id):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        cursor = await db.execute(
-            "SELECT user_id FROM star_notifications WHERE user_id = ?", (user_id,)
-        )
-        user = await cursor.fetchone()
-
-        if not user:
-            return f"No user found with ID {user_id}."
-
-        await db.execute("DELETE FROM star_notifications WHERE user_id = ?", (user_id,))
-        await db.commit()
-
-        return f"User with ID {user_id} has been deleted from notifications."
+    query = f"""
+        DELETE FROM `{DATASET_ID}.{TABLE_STAR_NOTIFICATIONS}`
+        WHERE user_id = @user_id
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "INT64", user_id),
+        ]
+    )
+    query_job = client.query(query, job_config=job_config)
+    query_job.result()
+    return f"User with ID {user_id} has been deleted from notifications."
 
 
 async def add_or_update_curse_counter(emoji, name):
     """
-    Add a new emoji or update the curse word counter for an existing one.
+    Se o emoji já existir na tabela, incrementa o contador.
+    Caso contrário, insere um novo registro com count = 1.
     """
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute(
-            """
-            INSERT INTO curse_word_counters (emoji, name, count)
-            VALUES (?, ?, 1)
-            ON CONFLICT(emoji) DO UPDATE SET count = count + 1
-            """,
-            (emoji, name),
-        )
-        await db.commit()
+    query = f"""
+        MERGE `{DATASET_ID}.{TABLE_CURSE_WORD_COUNTERS}` AS target
+        USING (SELECT @emoji AS emoji, @name AS name) AS source
+        ON target.emoji = source.emoji
+        WHEN MATCHED THEN
+            UPDATE SET count = target.count + 1
+        WHEN NOT MATCHED THEN
+            INSERT (emoji, name, count, created_at)
+            VALUES (@emoji, @name, 1, CURRENT_TIMESTAMP());
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("emoji", "STRING", emoji),
+            bigquery.ScalarQueryParameter("name", "STRING", name),
+        ]
+    )
+    query_job = client.query(query, job_config=job_config)
+    query_job.result()
+
 
 async def undo_last_curse_counter():
     """
-    Undo the last curse word counter based on the most recent created_at timestamp.
+    Reduz o contador da última entrada modificada.
+    Se o contador for maior que 0, decrementa em 1.
     """
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        cursor = await db.execute(
-            """
-            SELECT emoji, name, count
-            FROM curse_word_counters
-            WHERE count > 0
-            ORDER BY created_at DESC
-            LIMIT 1
-            """
-        )
-        last_entry = await cursor.fetchone()
-
-        if last_entry:
-            emoji, name, count = last_entry
-            if count > 0:
-                await db.execute(
-                    """
-                    UPDATE curse_word_counters
-                    SET count = count - 1
-                    WHERE emoji = ?
-                    """,
-                    (emoji,),
-                )
-                await db.commit()
-                return emoji, name
-
-        return None
-
-
-async def get_curse_counters():
+    query = f"""
+        SELECT emoji, name, count
+        FROM `{DATASET_ID}.{TABLE_CURSE_WORD_COUNTERS}`
+        WHERE count > 0
+        ORDER BY created_at DESC
+        LIMIT 1
     """
-    Retrieve all curse word counters from the database, sorted by count.
+    query_job = client.query(query)
+    rows = list(query_job.result())
+
+    if rows:
+        row = rows[0]
+        emoji, name, count = row["emoji"], row["name"], row["count"]
+
+        if count > 0:
+            update_query = f"""
+                UPDATE `{DATASET_ID}.{TABLE_CURSE_WORD_COUNTERS}`
+                SET count = count - 1
+                WHERE emoji = @emoji
+            """
+            job_config = bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("emoji", "STRING", emoji),
+                ]
+            )
+            update_job = client.query(update_query, job_config=job_config)
+            update_job.result()
+            return f"Desfeito: {name} ({emoji}) agora tem {count - 1} pontos."
+
+    return "Nenhuma entrada para desfazer."
+
+
+async def get_curse_counters(name=None):
+    query = f"""
+        SELECT emoji, name, count
+        FROM `{DATASET_ID}.{TABLE_CURSE_WORD_COUNTERS}`
+        WHERE (@name IS NULL OR name = @name)
+        ORDER BY count DESC
     """
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        rows = await db.execute_fetchall(
-            """
-            SELECT emoji, name, count
-            FROM curse_word_counters
-            ORDER BY count DESC
-            """
-        )
-        return rows
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[bigquery.ScalarQueryParameter("name", "STRING", name)]
+    )
+
+    query_job = client.query(query, job_config=job_config)
+    rows = query_job.result()
+
+    return [dict(row) for row in rows]
+
