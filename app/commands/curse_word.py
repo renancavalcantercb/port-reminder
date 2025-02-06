@@ -43,7 +43,7 @@ async def create_buttons(ctx):
             )
 
             await interaction.followup.send(
-                f"{name} now has {updated_count} curse words!", ephemeral=False
+                f"{emoji} {name} now has {updated_count} curse words!", ephemeral=False
             )
 
         button.callback = button_callback
@@ -52,6 +52,7 @@ async def create_buttons(ctx):
     undo_button = Button(label="Undo Last", style=discord.ButtonStyle.danger, emoji="↩️")
 
     async def undo_callback(interaction):
+        await interaction.response.defer()
         last_undone = await db_undo_last_curse_counter()
 
         log_event(
@@ -62,12 +63,12 @@ async def create_buttons(ctx):
         )
 
         if last_undone:
-            emoji, name = last_undone
-            await interaction.response.send_message(
-                f"Undid the last curse word for {name} ({emoji}).", ephemeral=False
+            emoji, name, count = last_undone
+            await interaction.followup.send(
+                f"{emoji} {name} now has {count} curse words!", ephemeral=False
             )
         else:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "No curse words to undo!", ephemeral=False
             )
 

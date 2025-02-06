@@ -178,9 +178,9 @@ async def undo_last_curse_counter():
             )
             update_job = client.query(update_query, job_config=job_config)
             update_job.result()
-            return f"Desfeito: {name} ({emoji}) agora tem {count - 1} pontos."
 
-    return "Nenhuma entrada para desfazer."
+            return emoji, name, count - 1
+    return None
 
 
 async def get_curse_counters(name=None):
