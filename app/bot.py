@@ -8,7 +8,7 @@ from commands.register_star_notification import register_star_notification
 from commands.list_star_notifications import list_star_notifications
 from commands.remove_star_notification import remove_star_notification
 from commands.notify_star import notify_stars
-from commands.curse_word import create_buttons, show_rankings
+from commands.curse_word import create_buttons, show_rankings, CurseButtonView
 from dotenv import load_dotenv
 from os import getenv
 from utils import log_event
@@ -22,6 +22,9 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     log_event("info", f"Logged in as {bot.user.name}")
+
+    bot.add_view(CurseButtonView())
+    
     check_timers.start()
 
 

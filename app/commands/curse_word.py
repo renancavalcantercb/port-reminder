@@ -17,23 +17,25 @@ curse_word_emojis = {
     "🥶": "Tatá",
 }
 
+class CurseButtonView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
 
-async def create_buttons(ctx):
-    """
-    Creates buttons for each user and sends the interactive message.
-    """
-    view = View()
+        for emoji, name in curse_word_emojis.items():
+            button = Button(label=name, emoji=emoji, style=discord.ButtonStyle.primary)
+            button.callback = self.get_callback(emoji, name)
+            self.add_item(button)
 
-    for emoji, name in curse_word_emojis.items():
-        button = Button(label=name, emoji=emoji, style=discord.ButtonStyle.primary)
+        undo_button = Button(label="Undo Last", style=discord.ButtonStyle.danger, emoji="↩️")
+        undo_button.callback = self.undo_callback
+        self.add_item(undo_button)
 
-        async def button_callback(interaction, emoji=emoji, name=name):
+    def get_callback(self, emoji, name):
+        async def button_callback(interaction: discord.Interaction):
             await interaction.response.defer()
-
             await add_or_update_curse_counter(emoji, name)
             counters = await get_curse_counters(name)
-
-            updated_count = counters[0].get("count")
+            updated_count = counters[0].get("count", 0)
 
             log_event(
                 "info",
@@ -45,13 +47,9 @@ async def create_buttons(ctx):
             await interaction.followup.send(
                 f"{emoji} {name} now has {updated_count} curse words!", ephemeral=False
             )
+        return button_callback
 
-        button.callback = button_callback
-        view.add_item(button)
-
-    undo_button = Button(label="Undo Last", style=discord.ButtonStyle.danger, emoji="↩️")
-
-    async def undo_callback(interaction):
+    async def undo_callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
         last_undone = await db_undo_last_curse_counter()
 
@@ -64,32 +62,15 @@ async def create_buttons(ctx):
 
         if last_undone:
             emoji, name, count = last_undone
-            await interaction.followup.send(
-                f"{emoji} {name} now has {count} curse words!", ephemeral=False
-            )
+            await interaction.followup.send(f"{emoji} {name} now has {count} curse words!", ephemeral=False)
         else:
-            await interaction.followup.send(
-                "No curse words to undo!", ephemeral=False
-            )
+            await interaction.followup.send("No curse words to undo!", ephemeral=False)
 
-    undo_button.callback = undo_callback
-    view.add_item(undo_button)
-
-    log_event(
-        "info",
-        "Command `create_buttons` called.",
-        user_name=ctx.message.author.name,
-        user_id=ctx.message,
-    )
-
-    await ctx.send(
-        "👀 Curse Word Tracker! Click a button to add a curse word:", view=view
-    )
+async def create_buttons(ctx):
+    view = CurseButtonView()
+    await ctx.send("👀 Curse Word Tracker! Click a button to add a curse word:", view=view)
 
 async def show_rankings(ctx):
-    """
-    Displays the rankings of curse word counters from the database.
-    """
     counters = await get_curse_counters()
 
     log_event(
